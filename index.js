@@ -1,90 +1,90 @@
-import { WechatyBuilder } from 'wechaty';
-import qrcodeTerminal from 'qrcode-terminal';
-import { ChatGPTAPI } from 'chatgpt';
-import { apiKey, requestBuilder } from './config.js';
+import { WechatyBuilder } from "wechaty";
+import qrcodeTerminal from "qrcode-terminal";
+import { ChatGPTAPI } from "chatgpt";
+import { apiKey, requestBuilder, prompt } from "./config.js";
 
-const api = new ChatGPTAPI({ apiKey: apiKey || process.env.OPENAI_API_KEY });	// import key from apiKey.js or environment variable
+const api = new ChatGPTAPI({ apiKey: apiKey || process.env.OPENAI_API_KEY }); // import key from apiKey.js or environment variable
 const conversationPool = new Map();
 const wechaty = WechatyBuilder.build({
-  name: 'anti-cheat',
-  puppet: 'wechaty-puppet-wechat',
+  name: "anti-cheat",
+  puppet: "wechaty-puppet-wechat",
   puppetOptions: {
     uos: true,
   },
 });
+let opts = {};
+let initialized = false;
 
 wechaty
-  .on('scan', async (qrcode, status) => {
-    qrcodeTerminal.generate(qrcode); 	// show login qrcode on console
-    const qrcodeImageUrl = ['https://api.qrserver.com/v1/create-qr-code/?data=', encodeURIComponent(qrcode)].join('');
+  .on("scan", async (qrcode, status) => {
+    qrcodeTerminal.generate(qrcode); // show login qrcode on console
+    const qrcodeImageUrl = [
+      "https://api.qrserver.com/v1/create-qr-code/?data=",
+      encodeURIComponent(qrcode),
+    ].join("");
     console.log(qrcodeImageUrl);
   })
-  .on('login', user => console.log(`User ${user} logged in`))
-  .on('logout', user => console.log(`User ${user} has logged out`))
-  .on('friendship', async friendship => {
+  .on("login", async (user) => {
+    console.log(`User ${user} logged in`);
+    for (let i = 0; i < prompt.length; i++) {
+      await chatgptReply(prompt[i], "null");
+      console.log(`Initialize process(${i}/${prompt.length}).`);
+    }
+    console.log("initialize success.");
+    initialized = true;
+  })
+  .on("logout", (user) => console.log(`User ${user} has logged out`))
+  .on("friendship", async (friendship) => {
     try {
-      console.log(`received friend event from ${friendship.contact().name()}, messageType: ${friendship.type()}`);
+      console.log(
+        `received friend event from ${friendship
+          .contact()
+          .name()}, messageType: ${friendship.type()}`
+      );
     } catch (e) {
       console.error(e);
     }
   })
-  .on('message', async message => {
-    const contact = message.talker();
-    const receiver = message.listener();
-    let content = message.text();
-    const room = message.room();
-    const isText = message.type() === wechaty.Message.Type.Text;
-    if (!isText) {
+  .on("message", async (message) => {
+    if (message.self() || !initialized) {
       return;
     }
-    if (room) { } // room message
-	else {
-      console.log(`contact: ${contact} content: ${content}`);
-      reply(null, contact, content);
+    const contact = message.talker();
+    const content = message.text();
+    if (
+      !(message.type() == wechaty.Message.Type.Text && message.room() == null)
+    ) {
+      return;
     }
+    console.log(`Receiving msg from ${contact}: ${content}`);
+    let text = await chatgptReply(content, "user");
+    const replyRegex = /(?<=reply:)(.*)(?=predict)/i;
+    const predictRegex = /(?<=predict:)(.*)/i;
+    let reply = text.match(replyRegex)[0];
+    let predict = text.match(predictRegex)[0];
+    console.log(predict);
+    send(contact, reply);
   });
 
-async function reply(room, contact, content) {
-  content = content.trim();
-  if (content === 'ding') {		// bot function testing, should be disabled at production environment
-    const target = room || contact;
-    await send(target, 'dong');
-  }
-  if (content.startsWith('-c ')) {
-    const request = content.replace('-c ', '');
-    await chatgptReply(room, contact, request);
-  }
-}
-
-async function chatgptReply(room, contact, request) {
-  console.log(`contact: ${contact} request: ${request}`);
-  let response = 'Something unexpected happened, please try again later...';
+async function chatgptReply(request, prefix) {
+  let response = "Something unexpected happened, please try again later...";
   try {
-    let opts = {};
-    // conversation
-    let conversation = conversationPool.get(contact.id);
-    if (conversation) {
-      opts = conversation;
-    }
     opts.timeoutMs = 2 * 60 * 1000;
-	request = requestBuilder(request);
+    request = requestBuilder(request, prefix);
     let res = await api.sendMessage(request, opts);
     response = res.text;
-    console.log(`contact: ${contact} response: ${response}`);
-    conversation = {
+    opts = {
       conversationId: res.conversationId,
       parentMessageId: res.id,
     };
-    conversationPool.set(contact.id, conversation);
   } catch (e) {
-    if (e.message === 'ChatGPTAPI error 429') {
-      response = 'Previous request is still processing, please try again later...';
+    if (e.message === "ChatGPTAPI error 429") {
+      response =
+        "Previous request is still processing, please try again later...";
     }
     console.error(e);
   }
-  //response = `${request} \n ------------------------ \n` + response;
-  const target = room || contact;
-  await send(target, response);
+  return response;
 }
 
 async function send(contact, message) {
@@ -95,8 +95,13 @@ async function send(contact, message) {
   }
 }
 
+function sleep(ms) {
+  const start = new Date().getTime();
+  while (new Date().getTime() < start + ms);
+}
+
 // main process
 wechaty
   .start()
-  .then(() => console.log('Start to log in wechat...'))
-  .catch(e => console.error(e));
+  .then(() => console.log("Start to log in wechat..."))
+  .catch((e) => console.error(e));
