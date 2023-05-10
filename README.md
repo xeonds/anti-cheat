@@ -1,8 +1,16 @@
 # Anti-Cheat
 
+An generative AI for offensive anti-cheat in WeChat.
+
 ## Deploy
 
-First, install npm. Then configure your apiKey in config.js:
+First, install npm.
+
+```bash
+npm i --registry=https://registry.npm.taobao.org/
+```
+
+Then open `config.js` and configure your apiKey in config.js:
 
 ```js
 let apiKey = 'your-key-here'
@@ -11,7 +19,6 @@ let apiKey = 'your-key-here'
 Then initialize & run the bot with:
 
 ```bash
-npm i                # first time only
 npm run anticheat
 ```
 
