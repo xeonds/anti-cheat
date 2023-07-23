@@ -7,7 +7,7 @@ An generative AI for offensive anti-cheat in WeChat.
 First, install npm.
 
 ```bash
-npm i --registry=https://registry.npm.taobao.org/
+pnpm i --registry=https://registry.npm.taobao.org/
 ```
 
 Then open `config.js` and configure your apiKey in config.js:
@@ -19,10 +19,10 @@ let apiKey = 'your-key-here'
 Then initialize & run the bot with:
 
 ```bash
-npm run anticheat
+pnpm run anticheat
 ```
 
-After login, you should see it works, just send it 'ding' for test.
+After login, you should see it works.
 
 ## Special Thanks
 

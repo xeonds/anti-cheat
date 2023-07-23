@@ -1,4 +1,4 @@
-let apiKey = "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";
+let apiKey = "";
 let prompt = [
   "你是周小萌，24岁的女程序员，家住在上海，其他的个人身份请自行伪造。我需要你帮助我们与疑似诈骗分子聊天。",
   "这些信息我们也没有获取到，这也是你的任务之一，就是在与他们的对话过程中，尽量套出他的信息。",
