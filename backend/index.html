@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AntiCheat Web-Panel</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"
+    />
+  </head>
+
+  <body>
+    <div id="app">
+      <el-menu mode="horizontal" id="main-menu">
+        <el-menu-item>AntiCheat Web-Panel</el-menu-item>
+      </el-menu>
+      <el-main class="main">
+        <el-card style="margin-bottom: 20px">
+          <template #header>
+            <div class="card-header">
+              <span>AntiCheat Web-Panel</span>
+            </div>
+          </template>
+          <el-button type="primary" @click="test">test backend</el-button>
+        </el-card>
+      </el-main>
+      <el-divider>by xeonds | 2023.5</el-divider>
+    </div>
+    <!-- 引入 vue 和 element-ui 库文件 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <!-- 引入 axios 库文件 -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+      new Vue({
+        el: "#app",
+        data() {
+          return {};
+        },
+        methods: {
+          test() {
+            axios
+              .post("/api/check", this.user)
+              .then((response) => {
+                this.$message({
+                  message: response.data.message,
+                  type: "success",
+                  duration: 1500,
+                });
+              })
+              .catch((error) => {
+                this.$message({
+                  message: error,
+                  type: "error",
+                  duration: 1500,
+                });
+              });
+          },
+        },
+      });
+    </script>
+    <style>
+      .main {
+        max-width: 1000px;
+        margin: 0 auto;
+        min-height: calc(100vh - 12rem);
+      }
+      .main > * {
+        margin: 0 auto;
+        margin-top: 4rem;
+      }
+    </style>
+  </body>
+</html>

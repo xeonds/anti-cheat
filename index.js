@@ -12,7 +12,6 @@ const wechaty = WechatyBuilder.build({
     uos: true,
   },
 });
-let opts = {};
 let initialized = false;
 
 wechaty
@@ -56,8 +55,17 @@ wechaty
     ) {
       return;
     }
+    if (!conversationPool.has(contact.id)) {
+      conversationPool.set(contact.id, {
+        opts: {},
+      });
+    }
     console.log(`Receiving msg from ${contact}: ${content}`);
-    let text = await chatgptReply(content, "user");
+    let text = await chatgptReply(
+      content,
+      "user",
+      conversationPool.get(contact.id)
+    );
     const replyRegex = /(?<=reply:)(.*)(?=predict)/i;
     const predictRegex = /(?<=predict:)(.*)/i;
     let reply = text.match(replyRegex)[0];
@@ -66,14 +74,14 @@ wechaty
     send(contact, reply);
   });
 
-async function chatgptReply(request, prefix) {
+async function chatgptReply(request, prefix, contact) {
   let response = "Something unexpected happened, please try again later...";
   try {
-    opts.timeoutMs = 2 * 60 * 1000;
+    contact.opts.timeoutMs = 2 * 60 * 1000;
     request = requestBuilder(request, prefix);
-    let res = await api.sendMessage(request, opts);
+    let res = await api.sendMessage(request, contact.opts);
     response = res.text;
-    opts = {
+    contact.opts = {
       conversationId: res.conversationId,
       parentMessageId: res.id,
     };
@@ -85,6 +93,10 @@ async function chatgptReply(request, prefix) {
     console.error(e);
   }
   return response;
+}
+
+async function InitGPTModel() {
+  openai.apiKey = apiKey;
 }
 
 async function send(contact, message) {
