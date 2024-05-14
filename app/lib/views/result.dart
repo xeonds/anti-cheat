@@ -27,14 +27,6 @@ class ResultPage extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 20),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, tortor eget ultrices aliquet, nunc nunc ultrices nunc, vitae tincidunt nunc nunc nec nunc.',
-                textAlign: TextAlign.center,
-              ),
-            ),
           ],
         ),
       ),
